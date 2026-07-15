@@ -2,12 +2,12 @@ import { jest, describe, expect, test, beforeEach } from '@jest/globals';
 import express from 'express';
 import request from 'supertest';
 
-const mockSearchUser = jest.fn();
+const mockAuthenticateUser = jest.fn();
 const mockCreateUser = jest.fn();
 
 jest.unstable_mockModule('../../../services/users/UserService.js', () => ({
   default: jest.fn().mockImplementation(() => ({
-    searchUser: mockSearchUser,
+    authenticateUser: mockAuthenticateUser,
     createUser: mockCreateUser,
   })),
 }));
@@ -20,13 +20,13 @@ app.use('/auth', authRouter);
 
 describe('auth.router', () => {
   beforeEach(() => {
-    mockSearchUser.mockReset();
+    mockAuthenticateUser.mockReset();
     mockCreateUser.mockReset();
   });
 
   describe('POST /auth/signin', () => {
     test('正しいメールアドレス・パスワードでログインできる', async () => {
-      mockSearchUser.mockResolvedValue([{ id: 1, name: 'test', email: 'test@test.com' }]);
+      mockAuthenticateUser.mockResolvedValue([{ id: 1, name: 'test', email: 'test@test.com' }]);
 
       const res = await request(app)
         .post('/auth/signin')
@@ -36,10 +36,11 @@ describe('auth.router', () => {
       expect(res.body.email).toBe('test@test.com');
       expect(typeof res.body.token).toBe('string');
       expect(res.body.token.length).toBeGreaterThan(0);
+      expect(mockAuthenticateUser).toHaveBeenCalledWith('test@test.com', 'password');
     });
 
     test('誤ったパスワードの場合はログインできない（トークンが発行されない）', async () => {
-      mockSearchUser.mockResolvedValue([]);
+      mockAuthenticateUser.mockResolvedValue([]);
 
       const res = await request(app)
         .post('/auth/signin')
@@ -47,6 +48,81 @@ describe('auth.router', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.token).toBeUndefined();
+    });
+
+    test('メールアドレス未指定ではログインできない（ユーザー検索を行わない）', async () => {
+      const res = await request(app)
+        .post('/auth/signin')
+        .send({ password: 'password' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.token).toBeUndefined();
+      expect(mockAuthenticateUser).not.toHaveBeenCalled();
+    });
+
+    test('パスワード未指定ではログインできない（ユーザー検索を行わない）', async () => {
+      const res = await request(app)
+        .post('/auth/signin')
+        .send({ email: 'test@test.com' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.token).toBeUndefined();
+      expect(mockAuthenticateUser).not.toHaveBeenCalled();
+    });
+
+    test('空文字のパスワードではログインできない（メールアドレスだけで認証されない）', async () => {
+      const res = await request(app)
+        .post('/auth/signin')
+        .send({ email: 'test@test.com', password: '' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.token).toBeUndefined();
+      expect(mockAuthenticateUser).not.toHaveBeenCalled();
+    });
+
+    test('空白だけのパスワードではログインできない', async () => {
+      const res = await request(app)
+        .post('/auth/signin')
+        .send({ email: 'test@test.com', password: '   ' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.token).toBeUndefined();
+      expect(mockAuthenticateUser).not.toHaveBeenCalled();
+    });
+
+    test('空白だけのメールアドレスではログインできない', async () => {
+      const res = await request(app)
+        .post('/auth/signin')
+        .send({ email: '   ', password: 'password' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.token).toBeUndefined();
+      expect(mockAuthenticateUser).not.toHaveBeenCalled();
+    });
+
+    test('emailやpasswordが文字列でない場合はユーザー検索を行わない', async () => {
+      const res = await request(app)
+        .post('/auth/signin')
+        .send({ email: { $ne: null }, password: { $ne: null } });
+
+      expect(res.status).toBe(200);
+      expect(res.body.token).toBeUndefined();
+      expect(mockAuthenticateUser).not.toHaveBeenCalled();
+    });
+
+    test('存在しないメールアドレスの場合とパスワード不一致の場合で同じレスポンスを返す（判別不可）', async () => {
+      mockAuthenticateUser.mockResolvedValue([]);
+      const resNotFound = await request(app)
+        .post('/auth/signin')
+        .send({ email: 'unknown@test.com', password: 'password' });
+
+      mockAuthenticateUser.mockResolvedValue([]);
+      const resWrongPassword = await request(app)
+        .post('/auth/signin')
+        .send({ email: 'test@test.com', password: 'wrong-password' });
+
+      expect(resNotFound.status).toBe(resWrongPassword.status);
+      expect(resNotFound.body).toEqual(resWrongPassword.body);
     });
   });
 
