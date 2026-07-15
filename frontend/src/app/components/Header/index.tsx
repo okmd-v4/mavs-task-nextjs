@@ -2,13 +2,14 @@
 import { useRouter } from "next/navigation";
 import styles from "./header.module.css";
 import { useLoginData } from "@/app/hooks/useLoginData";
+import { saveLoginData } from "@/app/utils/authStorage";
 
 export default function Header() {
 	const router = useRouter();
 	const { loginData, setLoginData } = useLoginData();
 
 	const logout = () => {
-		// localStorageからの削除はLoginProviderが行う
+		saveLoginData(undefined);
 		setLoginData(undefined);
 		router.push("/");
 	};

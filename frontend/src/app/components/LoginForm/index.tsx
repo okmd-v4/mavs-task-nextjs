@@ -4,6 +4,7 @@ import { LoginRequest } from "@/app/types/Login/LoginReqest";
 import { LoginResponse } from "@/app/types/Login/LoginResponse";
 import { useLoginData } from "@/app/hooks/useLoginData";
 import { useRouter } from "next/navigation";
+import { saveLoginData } from "@/app/utils/authStorage";
 import styles from "./loginForm.module.css";
 
 export default function LoginForm() {
@@ -31,7 +32,8 @@ export default function LoginForm() {
 		);
 		const data: LoginResponse = await response.json();
 		if (data.token) {
-			// トークンの保持（localStorageへの保存はLoginProviderが行う）
+			// トークンの保持
+			saveLoginData(data);
 			setLoginData(data);
 			router.push("/");
 		} else {
