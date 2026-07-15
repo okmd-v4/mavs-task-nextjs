@@ -2,7 +2,7 @@ import AuthService from '../../services/auth/AuthService.js';
 import UserService from '../../services/users/UserService.js';
 import express from 'express';
 import { ConflictException } from '../../error.exceptions.js';
-import { isEmpty } from '../../services/ValidationsService.js';
+import { isEmpty, isValidEmail } from '../../services/ValidationsService.js';
 
 const router = express.Router();
 const userService = new UserService();
@@ -52,6 +52,11 @@ router.post('/signup', async (req, res, next) => {
     // 全フィールド必須
     if (isEmpty(name) || isEmpty(email) || isEmpty(password) || isEmpty(passwordConfirm)) {
       return res.status(400).json({ success: false, data: null, message: 'All fields are required' });
+    }
+
+    // メールアドレス形式チェック
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ success: false, data: null, message: 'Invalid email format' });
     }
 
     // パスワード6文字以上
