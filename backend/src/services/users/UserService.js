@@ -1,11 +1,43 @@
 // import nanoid from 'nanoid';
 import db from '../../models/index.js';
 import AuthService from '../auth/AuthService.js';
+import { ConflictException } from '../../error.exceptions.js';
 
 const authService = new AuthService();
 
 // クラス
 class UserService {
+  /**
+   * ユーザー新規登録
+   * @param name
+   * @param email
+   * @param password
+   * @return 作成したユーザー情報
+   */
+  async createUser(name, email, password) {
+    // メールアドレス重複チェックを行う
+    const existingUsers = await this.searchUser('', '', email, '');
+    if (existingUsers.length) {
+      throw new ConflictException('Email already registered');
+    }
+
+    // パスワードをSHA-256でハッシュ化する
+    const hash_password = authService.hashSha256(password);
+
+    // ユーザーを登録する
+    const row = await db.Users.create({
+      name,
+      email,
+      password: hash_password,
+    });
+
+    return {
+      id: row.dataValues.id,
+      name: row.dataValues.name,
+      email: row.dataValues.email,
+    };
+  }
+
   /**
    * ユーザー情報取得
    * @param ユーザーID

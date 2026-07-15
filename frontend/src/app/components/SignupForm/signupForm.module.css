@@ -1,0 +1,14 @@
+.signupForm_input {
+	display: block;
+	margin-bottom: 8px;
+}
+
+.signupForm_error {
+	color: red;
+	margin-bottom: 8px;
+}
+
+.signupForm_success {
+	color: green;
+	margin-bottom: 8px;
+}
