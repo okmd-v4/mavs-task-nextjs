@@ -9,9 +9,11 @@ const authService = new AuthService();
  */
 const authenticate = function authenticate(req, res, next) {
   try {
-    const token = req.headers.authorization;
+    const authHeader = req.headers.authorization;
+    const token = authHeader.slice(7); // "Bearer xxx" → "xxx"
     const decoded = authService.checkToken(token);
     req.jwtPayload = decoded;
+    req.user = { id: decoded.id };
     next();
   } catch (err) {
     return res.status(401).json({
