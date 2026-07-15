@@ -140,7 +140,7 @@ sequenceDiagram
     DB-->>API: user row
     API->>API: JWT発行 payload={id, email}
     API-->>Client: { email, token }
-    Client->>Client: localStorage.setItem('token', token)
+    Client->>Client: localStorage.setItem('loginData', JSON.stringify({email, token}))
 
     Client->>API: GET /articles (Authorization: Bearer <token>)
     API->>API: authenticateミドルウェアでトークン検証
@@ -151,3 +151,5 @@ sequenceDiagram
 ```
 
 JWTペイロードには `id`（ユーザーID）と `email` を含める。`authenticate` ミドルウェアは `Authorization: Bearer <token>` ヘッダーから `Bearer ` プレフィックスを除去してトークンを検証し、`req.user.id` にユーザーIDをセットする。
+
+ログイン状態は `LoginProvider`（`frontend/src/app/contexts/login.tsx`）が管理し、`localStorage.loginData` と同期する。初回マウント時に `localStorage` から復元し、JWTの `exp` が過ぎていれば自動的に破棄してログアウト状態として扱う。これによりページをリロードしてもサインアウトするまでログイン状態が維持される。

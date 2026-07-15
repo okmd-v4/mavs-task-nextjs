@@ -1,10 +1,11 @@
 import { Article, ArticleListResponse, ArticleResponse } from "@/app/types/Article";
+import { getStoredToken } from "@/app/utils/authStorage";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 const authHeaders = (): HeadersInit => ({
 	"Content-Type": "application/json",
-	Authorization: `Bearer ${localStorage.getItem("token")}`,
+	Authorization: `Bearer ${getStoredToken()}`,
 });
 
 export const useArticles = () => {
