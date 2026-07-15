@@ -55,6 +55,8 @@ erDiagram
 | created_at | TIMESTAMP     | DEFAULT CURRENT_TIMESTAMP                      | 作成日時      |
 | updated_at | TIMESTAMP     | DEFAULT CURRENT_TIMESTAMP                      | 更新日時      |
 
+Sequelizeモデル（`backend/src/models/articles.js`）は上記DB定義に合わせて `content` を `DataTypes.TEXT`、`author_id` を `DataTypes.INTEGER` としている（以前は両方とも `DataTypes.STRING` になっており、DB定義と不一致だった）。
+
 ## API仕様
 
 ベースURL: `http://localhost:3001`
@@ -97,6 +99,7 @@ erDiagram
 
 バリデーション:
 - 全フィールド必須（400）
+- メールアドレス形式が不正（400）
 - パスワードは6文字以上（400）
 - passwordとpasswordConfirmが一致すること（400）
 - メールアドレス重複（409）
@@ -122,6 +125,15 @@ erDiagram
 ```json
 { "success": true, "data": { }, "message": "" }
 ```
+
+### メモAPIのバリデーション
+
+作成（POST）・更新（PUT）時、以下を満たさない場合は `400` を返す（レスポンス形式は `{ "success": false, "data": null, "message": "..." }` で統一）。
+
+- タイトルが必須かつ100文字以内であること
+- 本文が必須であること
+
+`GET /articles/:id`、`PUT /articles/:id`、`DELETE /articles/:id` のURLパラメータ `id` が正の整数（例: `1`, `23`）でない場合（`0`、負数、小数、数値以外の文字列、先頭ゼロなど）も `400` を返す。
 
 所有者以外のメモへのアクセス、または存在しないメモへのアクセスは `404` を返す（存在有無を区別せず一律404とし、他人のメモの存在を推測されないようにしている）。
 
@@ -153,3 +165,25 @@ sequenceDiagram
 JWTペイロードには `id`（ユーザーID）と `email` を含める。`authenticate` ミドルウェアは `Authorization: Bearer <token>` ヘッダーから `Bearer ` プレフィックスを除去してトークンを検証し、`req.user.id` にユーザーIDをセットする。
 
 ログイン状態は `LoginProvider`（`frontend/src/app/contexts/login.tsx`）が管理し、`localStorage.loginData` と同期する。初回マウント時に `localStorage` から復元し、JWTの `exp` が過ぎていれば自動的に破棄してログアウト状態として扱う。これによりページをリロードしてもサインアウトするまでログイン状態が維持される。
+
+## フロントエンドのAPIエラー処理
+
+`frontend/src/app/hooks/useArticles.ts` は共通の `request` 関数を通してAPIを呼び出し、レスポンスの `response.ok` とステータスコードに応じて以下のように処理する（`ApiError`（`frontend/src/app/utils/ApiError.ts`）としてthrowし、呼び出し元のページで表示する）。
+
+| ステータス | 処理内容 |
+| ---------- | -------- |
+| 400        | サーバーから返却されたエラーメッセージをフォームの近くに表示する |
+| 401        | 保存済みログイン情報（`localStorage.loginData`）を削除し、`/signin` へ遷移する |
+| 404        | 「メモが見つかりません」等のメッセージを表示する |
+| 500        | 「サーバーエラーが発生しました。しばらくしてから再度お試しください」を表示する |
+| 通信失敗（fetch自体が例外） | 「通信に失敗しました。ネットワーク環境をご確認ください。」を表示する |
+
+未認証状態やAPIエラー時に「メモがありません」という空状態メッセージを誤って表示しないよう、エラー発生時は必ず専用のエラーメッセージ状態を設定し、`MemoList` はエラー状態を空状態より優先して表示する。
+
+## ログイン必須画面の制御
+
+`/`、`/memo/new`、`/memo/[id]` は未ログイン時に `/signin` へリダイレクトする。リダイレクト判定は `frontend/src/app/hooks/useRequireAuth.ts` が行う。
+
+`LoginContext` は `loginData` に加えて `isRestored`（`localStorage` からのログイン情報復元が完了したかどうか）を保持する。`isRestored` が `true` になるまでは「未ログイン」と判定せず、画面も「読み込み中...」を表示するだけに留める。これにより、`localStorage` の読み込みが完了する前に誤ってログイン済みユーザーを `/signin` へ飛ばしてしまう問題を防いでいる。
+
+`isRestored` の更新は初回マウント時の1つの `useEffect` 内でのみ行い、`loginData` の変化を監視して自動保存するような別effectは持たない。React 18のStrictMode（開発モード）はeffectを二重実行するため、そのような自動保存effectがあると復元前の状態で `localStorage` を消してしまう競合状態が発生する（詳細は `docs/test-spec.md` の既知の制限事項を参照）。

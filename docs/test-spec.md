@@ -2,7 +2,10 @@
 
 ## 実施方法
 
-Docker Compose (`docker compose up`) で frontend / backend / postgres を起動し、ブラウザから手動で確認した。
+本ドキュメントは手動テストと自動テストに分けて記載する。
+
+- **手動テスト**: Docker Compose (`docker compose up`) で frontend / backend / postgres を起動し、ブラウザから確認した（1〜8章）。
+- **自動テスト**: バックエンドはJest+Supertest、フロントエンドはJest+React Testing Libraryで実装している（9章）。
 
 ## 1. サインアップ
 
@@ -13,6 +16,7 @@ Docker Compose (`docker compose up`) で frontend / backend / postgres を起動
 | 1-3 | パスワードとパスワード（確認）が不一致で登録                     | サーバーから「Passwords do not match」エラーが返却される           | OK   |
 | 1-4 | 既存メールアドレスで登録                                          | 409エラー「Email already registered」が返却される                  | 未実施（要追加確認） |
 | 1-5 | 正しい入力で登録（name=テストユーザー, email=testuser@test.com） | 登録成功メッセージ表示後、3秒後に `/signin` へ自動遷移する         | OK   |
+| 1-6 | メールアドレス形式が不正な値（例: `invalid-email`）で登録         | 400エラー「Invalid email format」が返却される                      | OK   |
 
 ## 2. サインイン
 
@@ -38,6 +42,8 @@ Docker Compose (`docker compose up`) で frontend / backend / postgres を起動
 | --- | ----------------------------------------------- | ------------------------------------------------------ | ---- |
 | 4-1 | 「新規作成」からタイトル・本文を入力して保存     | 一覧ページに遷移し、作成したメモが表示される           | OK   |
 | 4-2 | タイトルを101文字以上入力しようとする            | 100文字目で入力できなくなる（`maxLength`制御）         | OK   |
+| 4-3 | APIを直接叩きタイトル空文字で作成リクエストを送る | 400が返り「Title is required and must be 100 characters or less」等のメッセージが画面に表示される | OK   |
+| 4-4 | APIを直接叩き本文空文字で作成リクエストを送る     | 400が返り「Content is required」等のメッセージが画面に表示される | OK   |
 
 ## 5. メモ編集
 
@@ -62,12 +68,54 @@ Docker Compose (`docker compose up`) で frontend / backend / postgres を起動
 | 7-1 | トークンなしで `GET /articles` を呼び出す              | 401 Not authenticated                   | OK（authenticateミドルウェアで保証） |
 | 7-2 | 不正な形式のAuthorizationヘッダーで呼び出す            | 401 Not authenticated                   | OK |
 | 7-3 | 有効なトークンで `Bearer <token>` 形式で呼び出す        | 正常にリクエストが処理される            | OK |
+| 7-4 | `GET /articles/0`、`GET /articles/abc` など不正なIDでアクセスする | 400が返る（404ではない） | OK |
+| 7-5 | メモ一覧表示中にJWTが期限切れになった状態でAPIを呼び出す（またはlocalStorageのトークンを不正な値に書き換える） | 401が返り、保存済みログイン情報が削除されて`/signin`へ自動遷移する | OK |
+| 7-6 | 未ログイン状態で `/`、`/memo/new`、`/memo/[id]` に直接アクセスする | `/signin` へ自動的にリダイレクトされる | OK |
+| 7-7 | ログイン状態の復元が完了する前の一瞬（初回レンダリング時） | 保護ページの内容が一瞬でも表示されず、誤って`/signin`へ飛ばされることもない | OK |
 
 ## 8. ログアウト
 
 | No  | 手順                          | 期待結果                                              | 結果 |
 | --- | ----------------------------- | --------------------------------------------------------- | ---- |
 | 8-1 | ヘッダーの「ログアウト」を押下 | `localStorage.loginData` が削除され、サインインボタンが表示される | OK |
+
+## 9. 自動テスト
+
+### バックエンド（Jest + Supertest）
+
+実行方法: `cd backend && npm test`
+
+DBには接続せず、`db`（Sequelizeモデル）や各Serviceをモックして検証している。
+
+| ファイル | 内容 |
+| -------- | ---- |
+| `backend/src/services/__tests__/ValidationsService.test.js` | `isEmpty`/`isValidEmail`/`isValidId`/`isValidTitle`/`isValidContent` の単体テスト |
+| `backend/src/services/articles/__tests__/ArticleService.test.js` | 自分のメモだけを取得できること、他ユーザーのメモの取得・更新・削除が`NotFoundException`になること、作成時に`author_id`が設定されることを検証 |
+| `backend/src/routes/articles/__tests__/articles.router.test.js` | 未認証アクセスが401になること、タイトル未入力/101文字以上/本文未入力が400になること、不正なIDパラメータ（`0`/`abc`）が400になること、他ユーザーのメモ操作が404になることをHTTPレベルで検証 |
+| `backend/src/routes/auth/__tests__/auth.router.test.js` | 正常なログイン、誤ったパスワードでのログイン失敗、サインアップのバリデーション（必須項目・メール形式・パスワード長・確認一致）を検証 |
+
+### フロントエンド（Jest + React Testing Library）
+
+実行方法: `cd frontend && npm test`
+
+| ファイル | 内容 |
+| -------- | ---- |
+| `frontend/src/app/utils/__tests__/authStorage.test.ts` | ログイン情報の保存と復元、`saveLoginData(undefined)`による削除、期限切れJWTの自動削除、`getStoredToken`の挙動を検証 |
+| `frontend/src/app/(default)/__tests__/page.test.tsx` | `localStorage`に有効なログイン情報がある状態でメモ一覧ページをレンダリングし、リロード後も正しくメモ一覧が表示され「メモがありません」にならないことを検証。また未ログイン時はAPIが呼ばれないことを検証 |
+
+### 必須シナリオと対応するテストの対応表
+
+| シナリオ | テスト |
+| -------- | ------ |
+| 正常なログイン | `auth.router.test.js` |
+| 誤ったパスワードでのログイン失敗 | `auth.router.test.js` |
+| ログイン情報の保存と復元 | `authStorage.test.ts` |
+| 期限切れJWTの削除 | `authStorage.test.ts` |
+| リロード後もメモ一覧が表示される | `page.test.tsx` |
+| 自分のメモだけを取得できる | `ArticleService.test.js` |
+| 他ユーザーのメモを取得・更新・削除できない | `ArticleService.test.js` |
+| タイトル未入力・100文字超過を拒否する | `articles.router.test.js` |
+| 未認証のメモAPIアクセスが401になる | `articles.router.test.js` |
 
 ## 既知の制限事項
 
