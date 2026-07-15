@@ -1,0 +1,30 @@
+.articleForm_field {
+	margin-bottom: 16px;
+}
+
+.articleForm_title {
+	display: block;
+	width: 100%;
+	padding: 8px;
+	box-sizing: border-box;
+}
+
+.articleForm_counter {
+	text-align: right;
+	color: #777;
+	font-size: 12px;
+}
+
+.articleForm_content {
+	display: block;
+	width: 100%;
+	min-height: 200px;
+	padding: 8px;
+	box-sizing: border-box;
+	resize: vertical;
+}
+
+.articleForm_actions {
+	display: flex;
+	gap: 8px;
+}

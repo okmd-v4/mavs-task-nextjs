@@ -8,6 +8,7 @@ export default function Header() {
 	const { loginData, setLoginData } = useLoginData();
 
 	const logout = () => {
+		localStorage.removeItem("token");
 		setLoginData(undefined);
 		router.push("/");
 	};

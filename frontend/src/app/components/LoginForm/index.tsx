@@ -32,6 +32,7 @@ export default function LoginForm() {
 		const data: LoginResponse = await response.json();
 		if (data.token) {
 			// トークンの保持
+			localStorage.setItem("token", data.token);
 			setLoginData(data);
 			router.push("/");
 		} else {
