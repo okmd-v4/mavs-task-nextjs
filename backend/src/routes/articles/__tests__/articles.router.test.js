@@ -90,6 +90,56 @@ describe('articles.router', () => {
     expect(mockCreateArticle).not.toHaveBeenCalled();
   });
 
+  test('空白だけのタイトルは400を返す', async () => {
+    const res = await request(app)
+      .post('/articles')
+      .set('Authorization', `Bearer ${validToken}`)
+      .send({ title: '   ', content: 'c' });
+
+    expect(res.status).toBe(400);
+    expect(mockCreateArticle).not.toHaveBeenCalled();
+  });
+
+  test('空白や改行だけの本文は400を返す', async () => {
+    const res = await request(app)
+      .post('/articles')
+      .set('Authorization', `Bearer ${validToken}`)
+      .send({ title: 't', content: '  \n\n  ' });
+
+    expect(res.status).toBe(400);
+    expect(mockCreateArticle).not.toHaveBeenCalled();
+  });
+
+  test('タイトルが文字列以外（数値）の場合は400を返す', async () => {
+    const res = await request(app)
+      .post('/articles')
+      .set('Authorization', `Bearer ${validToken}`)
+      .send({ title: 12345, content: 'c' });
+
+    expect(res.status).toBe(400);
+    expect(mockCreateArticle).not.toHaveBeenCalled();
+  });
+
+  test('本文が文字列以外（オブジェクト）の場合は400を返す', async () => {
+    const res = await request(app)
+      .post('/articles')
+      .set('Authorization', `Bearer ${validToken}`)
+      .send({ title: 't', content: { foo: 'bar' } });
+
+    expect(res.status).toBe(400);
+    expect(mockCreateArticle).not.toHaveBeenCalled();
+  });
+
+  test('更新APIでも空白だけのタイトルは400を返す', async () => {
+    const res = await request(app)
+      .put('/articles/1')
+      .set('Authorization', `Bearer ${validToken}`)
+      .send({ title: '   ', content: 'c' });
+
+    expect(res.status).toBe(400);
+    expect(mockUpdateArticle).not.toHaveBeenCalled();
+  });
+
   test('タイトル・本文が正しい場合は201でメモを作成する', async () => {
     mockCreateArticle.mockResolvedValue({ id: 1, title: 't', content: 'c', author_id: 1 });
 

@@ -1,5 +1,12 @@
 import { describe, expect, test } from '@jest/globals';
-import { isEmpty, isValidEmail, isValidId, isValidTitle, isValidContent } from '../ValidationsService.js';
+import {
+  isEmpty,
+  isValidEmail,
+  isValidId,
+  isValidTitle,
+  isValidContent,
+  isNonBlankString,
+} from '../ValidationsService.js';
 
 describe('isEmpty', () => {
   test('空文字はtrue', () => {
@@ -58,8 +65,24 @@ describe('isValidTitle', () => {
   test('空文字はfalse', () => {
     expect(isValidTitle('')).toBe(false);
   });
+  test('空白だけはfalse', () => {
+    expect(isValidTitle('   ')).toBe(false);
+  });
+  test('タブ・改行だけはfalse', () => {
+    expect(isValidTitle('\t\n  \n')).toBe(false);
+  });
+  test('前後に空白があっても中身があればtrue', () => {
+    expect(isValidTitle('  タイトル  ')).toBe(true);
+  });
   test('101文字以上はfalse', () => {
     expect(isValidTitle('a'.repeat(101))).toBe(false);
+  });
+  test('文字列以外はfalse', () => {
+    expect(isValidTitle(123)).toBe(false);
+    expect(isValidTitle(null)).toBe(false);
+    expect(isValidTitle(undefined)).toBe(false);
+    expect(isValidTitle({})).toBe(false);
+    expect(isValidTitle(['a'])).toBe(false);
   });
 });
 
@@ -69,5 +92,37 @@ describe('isValidContent', () => {
   });
   test('空文字はfalse', () => {
     expect(isValidContent('')).toBe(false);
+  });
+  test('空白だけはfalse', () => {
+    expect(isValidContent('   ')).toBe(false);
+  });
+  test('改行だけはfalse', () => {
+    expect(isValidContent('\n\n\n')).toBe(false);
+  });
+  test('前後に空白があっても中身があればtrue', () => {
+    expect(isValidContent('  本文  ')).toBe(true);
+  });
+  test('文字列以外はfalse', () => {
+    expect(isValidContent(123)).toBe(false);
+    expect(isValidContent(null)).toBe(false);
+    expect(isValidContent(undefined)).toBe(false);
+    expect(isValidContent({})).toBe(false);
+  });
+});
+
+describe('isNonBlankString', () => {
+  test('通常の文字列はtrue', () => {
+    expect(isNonBlankString('a')).toBe(true);
+  });
+  test('空文字はfalse', () => {
+    expect(isNonBlankString('')).toBe(false);
+  });
+  test('空白だけはfalse', () => {
+    expect(isNonBlankString('   ')).toBe(false);
+  });
+  test('文字列以外はfalse', () => {
+    expect(isNonBlankString(undefined)).toBe(false);
+    expect(isNonBlankString(null)).toBe(false);
+    expect(isNonBlankString(123)).toBe(false);
   });
 });
