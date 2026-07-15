@@ -2,7 +2,7 @@ import AuthService from '../../services/auth/AuthService.js';
 import UserService from '../../services/users/UserService.js';
 import express from 'express';
 import { ConflictException } from '../../error.exceptions.js';
-import { isEmpty, isValidEmail } from '../../services/ValidationsService.js';
+import { isEmpty, isValidEmail, isNonBlankString } from '../../services/ValidationsService.js';
 
 const router = express.Router();
 const userService = new UserService();
@@ -16,16 +16,23 @@ router.post('/signin', async (req, res, next) => {
     // リクエストパラメーター
     const { email, password } = req.body;
 
-    if (!email) return res.status(200).json({});
+    // email・passwordが文字列であり、空文字・空白のみでないことを確認する。
+    // ここで弾かない場合、password未指定時にsearchUser相当の検索条件からpasswordが
+    // 抜け落ちてemailの一致だけで認証されてしまう恐れがあるため、
+    // ユーザー検索・JWT発行の前に必ず両方を required とする。
+    // 存在しないメールアドレスの場合と区別できないよう、レスポンスは一致しない場合と同じ形にする。
+    if (!isNonBlankString(email) || !isNonBlankString(password)) {
+      return res.status(200).json({});
+    }
 
-    // ユーザー存在チェックを行う
-    const resSearchUser = await userService.searchUser('', '', email, password);
+    // ユーザー認証を行う（emailとpasswordの両方を必ず照合条件に含める）
+    const resAuthUser = await userService.authenticateUser(email, password);
 
-    // パラメータ存在しない場合は再ログインを促すため、空で返却する
-    if (!resSearchUser.length) return res.status(200).json({});
+    // 一致しない場合は再ログインを促すため、空で返却する
+    if (!resAuthUser.length) return res.status(200).json({});
 
     // トークンを発行する
-    const user_id = resSearchUser[0].id;
+    const user_id = resAuthUser[0].id;
     const resCreateToken = await authService.createToken(email, user_id);
 
     // 返却用データを生成

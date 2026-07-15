@@ -39,6 +39,30 @@ class UserService {
   }
 
   /**
+   * ログイン認証専用のユーザー検索
+   * email・passwordの両方を必ず検索条件に含める（searchUserはpasswordが未指定の場合に
+   * 検索条件から除外してしまい、email一致だけで認証が通ってしまうため、ログインでは使用しない）
+   * @param email
+   * @param password
+   * @return 認証に成功したユーザー情報リスト（一致しない場合は空配列）
+   */
+  async authenticateUser(email, password) {
+    const hash_password = authService.hashSha256(password);
+    const rows = await db.Users.findAll({ where: { email, password: hash_password } });
+
+    const resDataList = [];
+    for (const row of rows) {
+      resDataList.push({
+        id: row.dataValues.id,
+        name: row.dataValues.name,
+        email: row.dataValues.email,
+      });
+    }
+
+    return resDataList;
+  }
+
+  /**
    * ユーザー情報取得
    * @param ユーザーID
    * @return ユーザー情報
