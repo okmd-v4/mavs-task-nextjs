@@ -3,11 +3,14 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Article } from "@/app/types/Article";
 import { useArticles } from "@/app/hooks/useArticles";
+import { useRequireAuth } from "@/app/hooks/useRequireAuth";
+import { ApiError } from "@/app/utils/ApiError";
 import MemoList from "../components/MemoList";
 import styles from "./page.module.css";
 
 export default function Home() {
 	const router = useRouter();
+	const { isRestored, isReady } = useRequireAuth();
 	const { fetchArticles, deleteArticle } = useArticles();
 	const [articles, setArticles] = useState<Article[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -20,24 +23,39 @@ export default function Home() {
 		try {
 			const data = await fetchArticles();
 			setArticles(data ?? []);
-		} catch {
-			setError("メモの取得に失敗しました");
+		} catch (err) {
+			setError(err instanceof ApiError ? err.message : "メモの取得に失敗しました");
 		} finally {
 			setLoading(false);
 		}
 	};
 
 	useEffect(() => {
+		if (!isReady) return;
 		loadArticles();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
+	}, [isReady]);
 
 	const handleDeleteConfirm = async () => {
 		if (deleteTargetId === null) return;
-		await deleteArticle(deleteTargetId);
-		setDeleteTargetId(null);
-		loadArticles();
+		try {
+			await deleteArticle(deleteTargetId);
+			setDeleteTargetId(null);
+			loadArticles();
+		} catch (err) {
+			setDeleteTargetId(null);
+			setError(err instanceof ApiError ? err.message : "メモの削除に失敗しました");
+		}
 	};
+
+	// ログイン状態の復元が終わるまでは何も描画しない（未ログイン判定のちらつき防止）
+	if (!isRestored) {
+		return <p>読み込み中...</p>;
+	}
+	// 未ログインの場合はuseRequireAuthがリダイレクトするので何も描画しない
+	if (!isReady) {
+		return null;
+	}
 
 	return (
 		<div>
