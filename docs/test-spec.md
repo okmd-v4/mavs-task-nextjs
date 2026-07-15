@@ -22,6 +22,7 @@ Docker Compose (`docker compose up`) で frontend / backend / postgres を起動
 | 2-2 | 誤ったパスワードでサインイン               | フォームがリセットされ、サインインできない                          | 未実施 |
 | 2-3 | サインイン後にページをリロードする         | ヘッダーのログイン状態が維持される（`localStorage`から復元）        | OK   |
 | 2-4 | `localStorage.loginData` のトークンをexp切れの値に書き換えてリロードする | 自動的にログアウト扱いとなり`localStorage`からも削除される | OK   |
+| 2-5 | メモを作成済みの状態でページを複数回リロードする | 毎回正しくメモ一覧が表示される（「メモがありません」にならない。修正前はReact StrictModeの二重effect実行による競合状態で稀に空表示になっていた） | OK   |
 
 ## 3. メモ一覧
 
