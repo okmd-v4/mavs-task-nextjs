@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import styles from "./header.module.css";
 import { useLoginData } from "@/app/hooks/useLoginData";
 import { saveLoginData } from "@/app/utils/authStorage";
+import { ADMIN_EMAIL } from "@/app/config/admin";
 
 export default function Header() {
 	const router = useRouter();
@@ -23,6 +24,12 @@ export default function Header() {
 					<span className={styles.header_greeting}>
 						ようこそ！{loginData.email}さん
 					</span>
+				)}
+
+				{loginData?.email === ADMIN_EMAIL && (
+					<button onClick={() => router.push("/admin/users")}>
+						ユーザー管理
+					</button>
 				)}
 
 				{loginData ? (
