@@ -68,6 +68,24 @@ http://localhost:3000/signin にアクセスし、
 
 https://github.com/user-attachments/assets/6abafe98-e804-42a7-a56e-20314db0a519
 
+## テストの実行方法
+
+バックエンド（Jest + Supertest）:
+
+```
+cd backend
+npm test
+```
+
+フロントエンド（Jest + React Testing Library）:
+
+```
+cd frontend
+npm test
+```
+
+詳細は `docs/test-spec.md` を参照してください。
+
 ## データベースクライアントツール
 
 pgAdmin を使用してテーブルを見ることができます。

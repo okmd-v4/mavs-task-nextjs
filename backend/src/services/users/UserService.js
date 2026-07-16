@@ -1,11 +1,67 @@
 // import nanoid from 'nanoid';
 import db from '../../models/index.js';
 import AuthService from '../auth/AuthService.js';
+import { ConflictException } from '../../error.exceptions.js';
 
 const authService = new AuthService();
 
 // クラス
 class UserService {
+  /**
+   * ユーザー新規登録
+   * @param name
+   * @param email
+   * @param password
+   * @return 作成したユーザー情報
+   */
+  async createUser(name, email, password) {
+    // メールアドレス重複チェックを行う
+    const existingUsers = await this.searchUser('', '', email, '');
+    if (existingUsers.length) {
+      throw new ConflictException('Email already registered');
+    }
+
+    // パスワードをSHA-256でハッシュ化する
+    const hash_password = authService.hashSha256(password);
+
+    // ユーザーを登録する
+    const row = await db.Users.create({
+      name,
+      email,
+      password: hash_password,
+    });
+
+    return {
+      id: row.dataValues.id,
+      name: row.dataValues.name,
+      email: row.dataValues.email,
+    };
+  }
+
+  /**
+   * ログイン認証専用のユーザー検索
+   * email・passwordの両方を必ず検索条件に含める（searchUserはpasswordが未指定の場合に
+   * 検索条件から除外してしまい、email一致だけで認証が通ってしまうため、ログインでは使用しない）
+   * @param email
+   * @param password
+   * @return 認証に成功したユーザー情報リスト（一致しない場合は空配列）
+   */
+  async authenticateUser(email, password) {
+    const hash_password = authService.hashSha256(password);
+    const rows = await db.Users.findAll({ where: { email, password: hash_password } });
+
+    const resDataList = [];
+    for (const row of rows) {
+      resDataList.push({
+        id: row.dataValues.id,
+        name: row.dataValues.name,
+        email: row.dataValues.email,
+      });
+    }
+
+    return resDataList;
+  }
+
   /**
    * ユーザー情報取得
    * @param ユーザーID

@@ -1,0 +1,44 @@
+.memoList_grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+	gap: 16px;
+	padding: 16px 0;
+}
+
+.memoList_card {
+	border: 1px solid #ddd;
+	border-radius: 8px;
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.memoList_title {
+	font-weight: bold;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.memoList_content {
+	flex: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	display: -webkit-box;
+	-webkit-line-clamp: 3;
+	-webkit-box-orient: vertical;
+	white-space: pre-wrap;
+	color: #555;
+}
+
+.memoList_actions {
+	display: flex;
+	gap: 8px;
+}
+
+.memoList_state {
+	padding: 32px 0;
+	text-align: center;
+	color: #777;
+}
