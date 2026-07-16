@@ -50,7 +50,7 @@ export default function Home() {
 
 	// ログイン状態の復元が終わるまでは何も描画しない（未ログイン判定のちらつき防止）
 	if (!isRestored) {
-		return <p>読み込み中...</p>;
+		return <p className="state-text">読み込み中...</p>;
 	}
 	// 未ログインの場合はuseRequireAuthがリダイレクトするので何も描画しない
 	if (!isReady) {
@@ -61,7 +61,12 @@ export default function Home() {
 		<div>
 			<div className={styles.page_header}>
 				<h2>メモ一覧</h2>
-				<button onClick={() => router.push("/memo/new")}>新規作成</button>
+				<button
+					className={styles.page_primaryButton}
+					onClick={() => router.push("/memo/new")}
+				>
+					新規作成
+				</button>
 			</div>
 			<MemoList
 				articles={articles}
@@ -75,8 +80,15 @@ export default function Home() {
 					<div className={styles.page_dialog}>
 						<p>このメモを削除しますか？</p>
 						<div className={styles.page_dialogActions}>
-							<button onClick={handleDeleteConfirm}>削除する</button>
-							<button onClick={() => setDeleteTargetId(null)}>キャンセル</button>
+							<button
+								className={styles.page_dangerButton}
+								onClick={handleDeleteConfirm}
+							>
+								削除する
+							</button>
+							<button onClick={() => setDeleteTargetId(null)}>
+								キャンセル
+							</button>
 						</div>
 					</div>
 				</div>

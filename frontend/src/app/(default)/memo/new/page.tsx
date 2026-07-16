@@ -22,7 +22,7 @@ export default function NewMemo() {
 	};
 
 	if (!isRestored) {
-		return <p>読み込み中...</p>;
+		return <p className="state-text">読み込み中...</p>;
 	}
 	if (!isReady) {
 		return null;
@@ -31,7 +31,7 @@ export default function NewMemo() {
 	return (
 		<div>
 			<h2>メモ新規作成</h2>
-			{error && <p>{error}</p>}
+			{error && <p className="error-text">{error}</p>}
 			<ArticleForm onSave={handleSave} onCancel={() => router.push("/")} />
 		</div>
 	);

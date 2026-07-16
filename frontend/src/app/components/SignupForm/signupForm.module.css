@@ -1,14 +1,21 @@
 .signupForm_input {
 	display: block;
-	margin-bottom: 8px;
+	margin-bottom: 12px;
 }
 
 .signupForm_error {
-	color: red;
-	margin-bottom: 8px;
+	color: var(--danger);
+	margin-bottom: 12px;
+	font-size: 14px;
 }
 
 .signupForm_success {
-	color: green;
-	margin-bottom: 8px;
+	color: var(--success);
+	margin-bottom: 12px;
+	font-size: 14px;
+}
+
+.signupForm_submit {
+	width: 100%;
+	margin-top: 4px;
 }

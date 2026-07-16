@@ -44,18 +44,19 @@ export default function EditMemo() {
 	};
 
 	if (!isRestored) {
-		return <p>読み込み中...</p>;
+		return <p className="state-text">読み込み中...</p>;
 	}
 	if (!isReady) {
 		return null;
 	}
-	if (loading) return <p>読み込み中...</p>;
-	if (error || !article) return <p>{error ?? "メモが見つかりません"}</p>;
+	if (loading) return <p className="state-text">読み込み中...</p>;
+	if (error || !article)
+		return <p className="error-text">{error ?? "メモが見つかりません"}</p>;
 
 	return (
 		<div>
 			<h2>メモ編集</h2>
-			{saveError && <p>{saveError}</p>}
+			{saveError && <p className="error-text">{saveError}</p>}
 			<ArticleForm
 				initialTitle={article.title}
 				initialContent={article.content}

@@ -77,7 +77,13 @@ export default function SignupForm() {
 			{errors.passwordConfirm && (
 				<p className={styles.signupForm_error}>確認用パスワードは必須です</p>
 			)}
-			<button disabled={success}>登録</button>
+			<button
+				type="submit"
+				className={styles.signupForm_submit}
+				disabled={success}
+			>
+				登録
+			</button>
 		</form>
 	);
 }

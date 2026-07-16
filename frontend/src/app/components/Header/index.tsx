@@ -18,23 +18,17 @@ export default function Header() {
 			<h1 className={styles.header_logo} onClick={() => router.push("/")}>
 				メモアプリ
 			</h1>
-			<div>
+			<div className={styles.header_userInfo}>
 				{loginData && (
-					<div>
-						<p>ようこそ！</p>
-						<p>{loginData?.email}さん</p>
-					</div>
+					<span className={styles.header_greeting}>
+						ようこそ！{loginData.email}さん
+					</span>
 				)}
 
 				{loginData ? (
 					<button onClick={logout}>ログアウト</button>
 				) : (
-					<button
-						className={styles.header_button}
-						onClick={() => router.push("/signin")}
-					>
-						サインイン
-					</button>
+					<button onClick={() => router.push("/signin")}>サインイン</button>
 				)}
 			</div>
 		</div>

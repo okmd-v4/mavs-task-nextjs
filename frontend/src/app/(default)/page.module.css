@@ -2,6 +2,24 @@
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
+	margin-bottom: 16px;
+}
+
+.page_primaryButton {
+	background: var(--primary);
+	border-color: var(--primary);
+	color: var(--primary-foreground);
+}
+
+.page_primaryButton:hover {
+	background: var(--primary-hover);
+	border-color: var(--primary-hover);
+}
+
+.page_dangerButton {
+	background: var(--danger);
+	border-color: var(--danger);
+	color: #fff;
 }
 
 .page_dialogOverlay {
@@ -14,19 +32,21 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	padding: 16px;
 }
 
 .page_dialog {
-	background: var(--background);
+	background: var(--surface);
 	color: var(--foreground);
 	padding: 24px;
-	border-radius: 8px;
+	border-radius: 12px;
 	min-width: 280px;
+	border: 1px solid var(--border);
 }
 
 .page_dialogActions {
 	display: flex;
 	gap: 8px;
 	justify-content: flex-end;
-	margin-top: 16px;
+	margin-top: 20px;
 }
