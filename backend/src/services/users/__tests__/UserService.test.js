@@ -1,12 +1,14 @@
 import { jest, describe, expect, test, beforeEach } from '@jest/globals';
 
 const mockFindAll = jest.fn();
+const mockFindOne = jest.fn();
 const mockCreate = jest.fn();
 
 jest.unstable_mockModule('../../../models/index.js', () => ({
   default: {
     Users: {
       findAll: mockFindAll,
+      findOne: mockFindOne,
       create: mockCreate,
     },
   },
@@ -20,6 +22,7 @@ describe('UserService.authenticateUser', () => {
   beforeEach(() => {
     userService = new UserService();
     mockFindAll.mockReset();
+    mockFindOne.mockReset();
     mockCreate.mockReset();
   });
 
@@ -70,5 +73,62 @@ describe('UserService.authenticateUser', () => {
     const hash2 = mockFindAll.mock.calls[1][0].where.password;
     expect(hash1).toBe(hash2);
     expect(hash1).not.toBe('password');
+  });
+});
+
+describe('UserService.getUserList', () => {
+  let userService;
+
+  beforeEach(() => {
+    userService = new UserService();
+    mockFindAll.mockReset();
+  });
+
+  test('全ユーザーをid昇順で返し、passwordは含めない', async () => {
+    mockFindAll.mockResolvedValue([
+      {
+        dataValues: {
+          id: 1,
+          name: 'a',
+          email: 'a@test.com',
+          password: 'hashed',
+          created_at: '2026-01-01T00:00:00.000Z',
+        },
+      },
+    ]);
+
+    const result = await userService.getUserList();
+
+    expect(mockFindAll).toHaveBeenCalledWith({ order: [['id', 'ASC']] });
+    expect(result).toEqual([
+      { id: 1, name: 'a', email: 'a@test.com', created_at: '2026-01-01T00:00:00.000Z' },
+    ]);
+    expect(result[0]).not.toHaveProperty('password');
+  });
+});
+
+describe('UserService.deleteUser', () => {
+  let userService;
+
+  beforeEach(() => {
+    userService = new UserService();
+    mockFindOne.mockReset();
+  });
+
+  test('存在するユーザーを削除する', async () => {
+    const destroy = jest.fn().mockResolvedValue(undefined);
+    mockFindOne.mockResolvedValue({ destroy });
+
+    await userService.deleteUser(1);
+
+    expect(mockFindOne).toHaveBeenCalledWith({ where: { id: 1 } });
+    expect(destroy).toHaveBeenCalled();
+  });
+
+  test('存在しないユーザーの削除はNotFoundExceptionを投げる', async () => {
+    mockFindOne.mockResolvedValue(null);
+    const { NotFoundException } = await import('../../../error.exceptions.js');
+
+    await expect(userService.deleteUser(999)).rejects.toThrow(NotFoundException);
   });
 });
