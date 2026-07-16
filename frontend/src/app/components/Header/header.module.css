@@ -25,3 +25,9 @@
 	color: var(--muted);
 	font-size: 14px;
 }
+
+@media (max-width: 640px) {
+	.header {
+		flex-wrap: wrap;
+	}
+}
