@@ -68,6 +68,10 @@ http://localhost:3000/signin にアクセスし、
 
 https://github.com/user-attachments/assets/6abafe98-e804-42a7-a56e-20314db0a519
 
+## ユーザー管理機能について
+
+`admin@test.com` でサインアップ（またはサインイン）すると、ヘッダーに「ユーザー管理」リンクが表示され、`/admin/users` から登録済みユーザーの一覧・削除ができます。管理者アカウントの判定はメールアドレスの完全一致によるもので、`backend/src/config/admin-config.js` と `frontend/src/app/config/admin.ts` の `adminEmail`/`ADMIN_EMAIL` で管理しています。変更する場合は両方を一致させてください。
+
 ## テストの実行方法
 
 バックエンド（Jest + Supertest）:

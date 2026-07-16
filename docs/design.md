@@ -110,6 +110,17 @@ Sequelizeモデル（`backend/src/models/articles.js`）は上記DB定義に合�
 { "success": true, "data": { "id": 2, "name": "テストユーザー", "email": "test@test.com" }, "message": "" }
 ```
 
+### ユーザー管理API（要認証・管理者のみ: `Authorization: Bearer <token>`）
+
+| メソッド | パス         | 説明             |
+| -------- | ------------ | ---------------- |
+| GET      | /users       | ユーザー一覧取得（id昇順、passwordは含めない） |
+| DELETE   | /users/:id   | ユーザー削除     |
+
+管理者アカウントは `backend/src/config/admin-config.js` の `adminEmail`（現在 `admin@test.com`）で固定的に指定している。ロールや権限テーブルは持たず、JWTペイロードの `email` がこの値と一致するかどうかだけで判定する（`requireAdmin` ミドルウェア、`authenticate` の後段で使用）。
+
+管理者以外がアクセスした場合は `403` を返す。管理者自身のアカウント（自分のユーザーID）は削除できず `400` を返す。ユーザー削除時は `articles` テーブルの `ON DELETE CASCADE` により、そのユーザーが作成したメモも連動して削除される。
+
 ### メモAPI（要認証: `Authorization: Bearer <token>`）
 
 | メソッド | パス           | 説明             |
@@ -187,3 +198,9 @@ JWTペイロードには `id`（ユーザーID）と `email` を含める。`aut
 `LoginContext` は `loginData` に加えて `isRestored`（`localStorage` からのログイン情報復元が完了したかどうか）を保持する。`isRestored` が `true` になるまでは「未ログイン」と判定せず、画面も「読み込み中...」を表示するだけに留める。これにより、`localStorage` の読み込みが完了する前に誤ってログイン済みユーザーを `/signin` へ飛ばしてしまう問題を防いでいる。
 
 `isRestored` の更新は初回マウント時の1つの `useEffect` 内でのみ行い、`loginData` の変化を監視して自動保存するような別effectは持たない。React 18のStrictMode（開発モード）はeffectを二重実行するため、そのような自動保存effectがあると復元前の状態で `localStorage` を消してしまう競合状態が発生する（詳細は `docs/test-spec.md` の既知の制限事項を参照）。
+
+## ユーザー管理画面の制御
+
+`/admin/users` は管理者アカウント（`frontend/src/app/config/admin.ts` の `ADMIN_EMAIL`。バックエンドの `adminEmail` と一致させる）以外はアクセスできない。判定は `frontend/src/app/hooks/useRequireAdmin.ts` が行い、`useRequireAuth` と同様に `isRestored` を待ってから、未ログインなら `/signin` へ、ログイン済みだが管理者でなければ `/` へリダイレクトする。
+
+ヘッダー（`frontend/src/app/components/Header/index.tsx`）は `loginData.email === ADMIN_EMAIL` の場合のみ「ユーザー管理」リンクを表示する。ただしこれは表示上の制御に過ぎず、実際のアクセス制御はフロントエンドのリダイレクトとバックエンドの `requireAdmin` ミドルウェア（403）の双方で行っている。
