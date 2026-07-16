@@ -3,7 +3,7 @@ import LoginForm from "../../components/LoginForm";
 
 export default function Signin() {
 	return (
-		<div>
+		<div className="authCard">
 			<h2>サインイン</h2>
 			<LoginForm />
 			<p>

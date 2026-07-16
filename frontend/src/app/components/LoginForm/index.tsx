@@ -103,7 +103,13 @@ export default function LoginForm() {
 			{errors.password && (
 				<p className={styles.loginForm_error}>パスワードを入力してください</p>
 			)}
-			<button disabled={isSubmitting}>送信</button>
+			<button
+				type="submit"
+				className={styles.loginForm_submit}
+				disabled={isSubmitting}
+			>
+				送信
+			</button>
 		</form>
 	);
 }

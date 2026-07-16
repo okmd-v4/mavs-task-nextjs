@@ -22,7 +22,7 @@ export default function MemoList({
 	}
 
 	if (error) {
-		return <p className={styles.memoList_state}>{error}</p>;
+		return <p className={styles.memoList_stateError}>{error}</p>;
 	}
 
 	if (!articles.length) {
@@ -37,7 +37,12 @@ export default function MemoList({
 					<div className={styles.memoList_content}>{article.content}</div>
 					<div className={styles.memoList_actions}>
 						<button onClick={() => onEdit(article.id)}>編集</button>
-						<button onClick={() => onDeleteRequest(article.id)}>削除</button>
+						<button
+							className={styles.memoList_deleteButton}
+							onClick={() => onDeleteRequest(article.id)}
+						>
+							削除
+						</button>
 					</div>
 				</div>
 			))}

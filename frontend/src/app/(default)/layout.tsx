@@ -9,7 +9,7 @@ export default function DefaultLayout({
 	return (
 		<LoginProvider>
 			<Header />
-			{children}
+			<div className="page">{children}</div>
 		</LoginProvider>
 	);
 }
