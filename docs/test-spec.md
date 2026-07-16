@@ -4,8 +4,8 @@
 
 本ドキュメントは手動テストと自動テストに分けて記載する。
 
-- **手動テスト**: Docker Compose (`docker compose up`) で frontend / backend / postgres を起動し、ブラウザから確認した（1〜8章）。
-- **自動テスト**: バックエンドはJest+Supertest、フロントエンドはJest+React Testing Libraryで実装している（9章）。
+- **手動テスト**: Docker Compose (`docker compose up`) で frontend / backend / postgres を起動し、ブラウザから確認した（1〜9章）。
+- **自動テスト**: バックエンドはJest+Supertest、フロントエンドはJest+React Testing Libraryで実装している（10章）。
 
 ## 1. サインアップ
 
@@ -79,7 +79,23 @@
 | --- | ----------------------------- | --------------------------------------------------------- | ---- |
 | 8-1 | ヘッダーの「ログアウト」を押下 | `localStorage.loginData` が削除され、サインインボタンが表示される | OK |
 
-## 9. 自動テスト
+## 9. ユーザー管理
+
+| No  | 手順                                                              | 期待結果                                                            | 結果 |
+| --- | ----------------------------------------------------------------- | ---------------------------------------------------------------------- | ---- |
+| 9-1 | 管理者アカウント（admin@test.com）でログインする                  | ヘッダーに「ユーザー管理」リンクが表示される                            | OK   |
+| 9-2 | 「ユーザー管理」から `/admin/users` を開く                        | 登録済みユーザーの一覧（ID・ユーザー名・メールアドレス・登録日時）が表示される | OK   |
+| 9-3 | 自分（管理者）の行を確認する                                      | 削除ボタンが表示されない                                                | OK   |
+| 9-4 | 他ユーザーの「削除」を押す                                        | 確認ダイアログが表示される                                              | OK   |
+| 9-5 | 確認ダイアログで「削除する」を押す                                | 対象ユーザーが削除され、一覧から消える                                  | OK   |
+| 9-6 | 一般ユーザー（管理者以外）でログインする                          | ヘッダーに「ユーザー管理」リンクが表示されない                          | OK   |
+| 9-7 | 一般ユーザーの状態で `/admin/users` に直接アクセスする            | `/`（メモ一覧）へ自動的にリダイレクトされる                             | OK   |
+| 9-8 | 未ログインの状態で `/admin/users` に直接アクセスする              | `/signin` へ自動的にリダイレクトされる                                  | OK   |
+| 9-9 | 一般ユーザーのトークンで `GET /users` を直接呼び出す               | 403が返る                                                               | OK   |
+| 9-10 | トークンなしで `GET /users` を直接呼び出す                        | 401が返る                                                               | OK   |
+| 9-11 | 管理者トークンで自分自身のIDに対して `DELETE /users/:id` を呼び出す | 400が返り削除されない                                                   | OK   |
+
+## 10. 自動テスト
 
 ### バックエンド（Jest + Supertest）
 
@@ -93,6 +109,8 @@ DBには接続せず、`db`（Sequelizeモデル）や各Serviceをモックし�
 | `backend/src/services/articles/__tests__/ArticleService.test.js` | 自分のメモだけを取得できること、他ユーザーのメモの取得・更新・削除が`NotFoundException`になること、作成時に`author_id`が設定されることを検証 |
 | `backend/src/routes/articles/__tests__/articles.router.test.js` | 未認証アクセスが401になること、タイトル未入力/101文字以上/本文未入力が400になること、不正なIDパラメータ（`0`/`abc`）が400になること、他ユーザーのメモ操作が404になることをHTTPレベルで検証 |
 | `backend/src/routes/auth/__tests__/auth.router.test.js` | 正常なログイン、誤ったパスワードでのログイン失敗、サインアップのバリデーション（必須項目・メール形式・パスワード長・確認一致）を検証 |
+| `backend/src/services/users/__tests__/UserService.test.js` | `getUserList`がid昇順・password除外で返すこと、`deleteUser`が存在しないユーザーで`NotFoundException`になることを検証 |
+| `backend/src/routes/users/__tests__/users.router.test.js` | 未認証401、管理者以外403、不正なID(`0`/`abc`)400、管理者自身の削除400、存在しないユーザー削除404、管理者による一覧取得・削除の成功をHTTPレベルで検証 |
 
 ### フロントエンド（Jest + React Testing Library）
 
@@ -102,6 +120,7 @@ DBには接続せず、`db`（Sequelizeモデル）や各Serviceをモックし�
 | -------- | ---- |
 | `frontend/src/app/utils/__tests__/authStorage.test.ts` | ログイン情報の保存と復元、`saveLoginData(undefined)`による削除、期限切れJWTの自動削除、`getStoredToken`の挙動を検証 |
 | `frontend/src/app/(default)/__tests__/page.test.tsx` | `localStorage`に有効なログイン情報がある状態でメモ一覧ページをレンダリングし、リロード後も正しくメモ一覧が表示され「メモがありません」にならないことを検証。また未ログイン時はAPIが呼ばれないことを検証 |
+| `frontend/src/app/(default)/admin/users/__tests__/page.test.tsx` | 管理者アカウントではユーザー一覧が表示されること、管理者以外は一覧を取得せず`/`へリダイレクトされること、未ログインでは`/signin`へリダイレクトされることを検証 |
 
 ### 必須シナリオと対応するテストの対応表
 
@@ -116,6 +135,10 @@ DBには接続せず、`db`（Sequelizeモデル）や各Serviceをモックし�
 | 他ユーザーのメモを取得・更新・削除できない | `ArticleService.test.js` |
 | タイトル未入力・100文字超過を拒否する | `articles.router.test.js` |
 | 未認証のメモAPIアクセスが401になる | `articles.router.test.js` |
+| 管理者以外はユーザー管理APIにアクセスできない | `users.router.test.js` |
+| 管理者はユーザー一覧取得・削除ができる | `users.router.test.js` |
+| 管理者は自分自身を削除できない | `users.router.test.js` |
+| 管理者以外はユーザー管理画面にアクセスできない | `admin/users/page.test.tsx` |
 
 ## 既知の制限事項
 

@@ -1,7 +1,7 @@
 // import nanoid from 'nanoid';
 import db from '../../models/index.js';
 import AuthService from '../auth/AuthService.js';
-import { ConflictException } from '../../error.exceptions.js';
+import { ConflictException, NotFoundException } from '../../error.exceptions.js';
 
 const authService = new AuthService();
 
@@ -79,6 +79,32 @@ class UserService {
     };
     return resData;
   }
+  /**
+   * ユーザー一覧取得（管理者用）
+   * @return ユーザー情報リスト（id昇順、passwordは含めない）
+   */
+  async getUserList() {
+    const rows = await db.Users.findAll({ order: [['id', 'ASC']] });
+    return rows.map((row) => ({
+      id: row.dataValues.id,
+      name: row.dataValues.name,
+      email: row.dataValues.email,
+      created_at: row.dataValues.created_at,
+    }));
+  }
+
+  /**
+   * ユーザー削除（管理者用）
+   * @param user_id
+   */
+  async deleteUser(user_id) {
+    const row = await db.Users.findOne({ where: { id: user_id } });
+    if (!row) {
+      throw new NotFoundException('User not found');
+    }
+    await row.destroy();
+  }
+
   /**
    * ユーザー情報検索
    * @param 検索条件
